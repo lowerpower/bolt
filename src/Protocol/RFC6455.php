@@ -31,6 +31,8 @@ class RFC6455 extends AbstractProtocol {
 
     public function upgrade() {
 
+echo "Upgrade\n";
+
         $this->sendUpgradeRequest();
     }
 
@@ -81,6 +83,8 @@ class RFC6455 extends AbstractProtocol {
 
     private function processFrame(Frame $frame) {
 
+echo "process frame Opcode : ".$frame->getOpcode()."\n";
+
         switch($frame->getOpcode()){
             case Frame::OP_BINARY:
             case Frame::OP_TEXT:
@@ -97,6 +101,7 @@ class RFC6455 extends AbstractProtocol {
     }
 
     private function addFragmentToMessage(Frame $frame) {
+echo "add fragment\n";        
         if(!isset($this->current_message)){
             $this->current_message = new Message();
         }
@@ -105,6 +110,7 @@ class RFC6455 extends AbstractProtocol {
             ->setIsComplete($frame->isFinalFragment());
 
         if($this->current_message->isComplete()){
+echo "message complete emit message\n";
             $this->client->emit('message', [$this->current_message->getBody()]);
             unset($this->current_message);
         }
@@ -158,12 +164,18 @@ class RFC6455 extends AbstractProtocol {
 
 
     public function send($string, $type = Frame::OP_TEXT) {
+
+echo "Send string\n";
+
         $frame = new Frame($string, $type);
         $this->stream->write($frame->encode());
     }
 
 
     public function sendHeartbeat(){
+
+echo "Send Ping\n";
+        
         $frame = new Frame('', Frame::OP_PING);
         $this->stream->write($frame->encode());
 

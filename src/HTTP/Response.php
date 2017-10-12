@@ -25,6 +25,9 @@ class Response {
         $this->message = $message;
         $this->headers = $headers;
         $this->body = $body;
+
+echo "response $this->message\n";
+
     }
 
     public function hasHeader($header_name){

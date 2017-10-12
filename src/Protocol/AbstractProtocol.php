@@ -29,6 +29,10 @@ abstract class AbstractProtocol implements ProtocolInterface {
     protected $heartbeat_timer;
 
     public function __construct(Client $client, DuplexStreamInterface $stream) {
+
+echo "Abstract\n";
+
+
         $this->client = $client;
         $this->stream = $stream;
 

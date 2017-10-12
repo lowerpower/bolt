@@ -3,19 +3,23 @@
 /**
  * @package    calcinai/bolt
  * @author     Michael Calcinai <michael@calcin.ai>
- */
+
+    // updated for "react/socket": "^0.8"
+    // https://github.com/lowerpower
+
+*/
 
 namespace Calcinai\Bolt;
 
 use Calcinai\Bolt\HTTP\Request;
 use Calcinai\Bolt\Protocol\ProtocolInterface;
 use Calcinai\Bolt\Protocol\RFC6455;
-use Calcinai\Bolt\Stream\Connector;
+use React\Socket\ConnectionInterface;
 use Evenement\EventEmitter;
 use React\Dns\Resolver\Resolver;
 use React\EventLoop\LoopInterface;
-use React\SocketClient\SecureConnector;
 use React\Stream\DuplexStreamInterface;
+
 
 class Client extends EventEmitter {
 
@@ -28,6 +32,9 @@ class Client extends EventEmitter {
      * @var Resolver
      */
     private $resolver;
+
+    private $options=array();
+    private $context=array();
 
     /**
      * The uri of the conenction
@@ -54,6 +61,8 @@ class Client extends EventEmitter {
 
     private $state;
 
+    private $debug;
+
     const PORT_DEFAULT_HTTP  = 80;
     const PORT_DEFAULT_HTTPS = 443;
 
@@ -62,8 +71,18 @@ class Client extends EventEmitter {
     const STATE_CLOSING     = 'closing';
     const STATE_CLOSED      = 'closed';
 
+/*    
+	$options:
 
-    public function __construct($uri, LoopInterface $loop, Resolver $resolver = null, $protocol = null){
+	'tcp' => $tcp,
+    'tls' => $tls,
+    'unix' => $unix,
+
+    'dns' => false,
+    'timeout' => false,
+*/
+
+    public function __construct($uri, LoopInterface $loop, $options=array(), $context=array(), $protocol = null){
 
         if(false === filter_var($uri, FILTER_VALIDATE_URL)){
             throw new \InvalidArgumentException(sprintf('Invalid URI [%s]. Must be in format ws(s)://host:port/path', $uri));
@@ -75,36 +94,53 @@ class Client extends EventEmitter {
             }
             $this->protocol = $protocol;
         } else{
+
+            echo "RFC6455\n";
             $this->protocol = RFC6455::class;
         }
 
         $this->uri = (object) parse_url($uri);
         $this->loop = $loop;
-        $this->resolver = $resolver;
+        //$this->resolver = $resolver;
         $this->state = self::STATE_CLOSED;
         $this->heartbeat_interval = null;
+        $this->options=$options;
+        $this->context=$context;
+        $this->debug=1;
     }
 
     public function connect() {
 
-        $connector = new Connector($this->loop, $this->resolver);
+        // how do we do this, we need the overloaded Connector
+        //$connector = new \React\SocketClient\Connector($this->loop, $this->options);
+        $options=array('tcp'=>$this->options,'tls'=>$this->context);
+
+        // we use socket connector here and specify the options, the options can be TCP and TLS options
+        //
+        $connector = new \React\Socket\Connector($this->loop,$options);
 
         switch($this->uri->scheme){
             case 'ws':
+                $method="tcp://";
                 $port = isset($this->uri->port) ? $this->uri->port : self::PORT_DEFAULT_HTTP;
                 break;
             case 'wss':
+                $method="tls://";
                 $port = isset($this->uri->port) ? $this->uri->port : self::PORT_DEFAULT_HTTPS;
-                //Upgrade the connector
-                $connector = new SecureConnector($connector, $this->loop);
                 break;
             default:
                 throw new \InvalidArgumentException(sprintf('Invalid scheme [%s]', $this->uri->scheme));
         }
-
+        
         $that = $this;
-        $connector->create($this->uri->host, $port)->then(function(DuplexStreamInterface $stream) use($that) {
-            $that->transport = new $that->protocol($that, $stream);
+
+        if($this->debug) echo "calling Connector with ".$method.$this->uri->host.":".$port."\n";
+        
+        $connector->connect($method.$this->uri->host.":".$port)->then(function (ConnectionInterface $conn) use($that) {
+
+            if($this->debug) echo "Connected, create websocket\n";
+            
+            $that->transport = new $that->protocol($that, $conn);
             $that->transport->upgrade();
         });
 
@@ -163,4 +199,14 @@ class Client extends EventEmitter {
         return $this->heartbeat_interval;
     }
 
+    public function getDebugState()
+    {
+        return $this->debug;
+    }
+
+    public function setDebugState($state)
+    {
+        $this->debug=$state;
+        return $this->debug;
+    }
 }

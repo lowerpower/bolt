@@ -11,10 +11,11 @@ use React\Dns\Resolver\Resolver;
 use React\EventLoop\LoopInterface;
 
 class Connector extends \React\SocketClient\Connector {
-
-    public function __construct(LoopInterface $loop, Resolver $resolver = null)
+    
+    public function __construct(LoopInterface $loop, array $options = array())
+    //public function __construct(LoopInterface $loop, Resolver $resolver = null)
     {
-        parent::__construct($loop, $resolver);
+        parent::__construct($loop,$options);
     }
 
 

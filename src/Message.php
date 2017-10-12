@@ -14,6 +14,8 @@ class Message {
 
     public function __construct() {
         $this->is_complete = false;
+
+echo "construct message\n";
     }
 
     public function addBody($body) {
@@ -26,6 +28,7 @@ class Message {
     }
 
     public function isComplete() {
+echo "is complete\n";    
         return $this->is_complete;
     }
 

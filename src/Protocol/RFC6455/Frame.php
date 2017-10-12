@@ -138,7 +138,9 @@ class Frame {
      * @throws IncompletePayloadException
      */
     public function appendBuffer(&$buffer){
+
         if(!$this->meta_decoded){
+echo "append to buffer ".$this->decode($buffer)."\n";        
             $this->decode($buffer);
         }
 
@@ -175,6 +177,8 @@ class Frame {
 
     public function decode(&$buffer){
 
+echo "decode\n";
+
         //unpack n takes 2 bytes
         $control = current(unpack('C', $this->eatBytes($buffer, 1)));
 
@@ -185,16 +189,20 @@ class Frame {
         $this->frame_fin = self::extractBits($control, self::FRAME_BITS_FIN);
 
         if($this->isControlFrame()){
+echo "control frame\n";
+
             //We know this by now, no need to decode further
             return;
         }
 
+echo "unpack ".$buffer."\n";
         $payload_info = current(unpack('C', $this->eatBytes($buffer, 1)));
+echo "info ".$payload_info."\n";
 
         //Go through all the bits, shifting along the way.
         $this->frame_length = self::extractBits($payload_info, self::FRAME_BITS_LENGTH);
         $this->frame_masked = self::extractBits($payload_info, self::FRAME_BITS_MASKED);
-
+echo "frame length ".$this->frame_length."\n";
 
         if($this->frame_length === 126){
             $this->frame_length = current(unpack('n', $this->eatBytes($buffer, 2))); //First 2 Bytes
@@ -204,10 +212,12 @@ class Frame {
         }
 
         if($this->isMasked()){
+echo "masked\n";
             $this->masking_key = $this->eatBytes($buffer, 4);
         }
 
         $this->meta_decoded = true;
+echo "done\n";
     }
 
 
