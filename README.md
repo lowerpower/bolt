@@ -4,16 +4,20 @@ Asynchronous WebSocket client client library for PHP. Supports HyBi, ~~as well a
 
 This was built purely to be a client, as the majority of the WS clients available also contain servers and are very bloated.
 
+This is not the original version, this has been updated for modern reactphp and an updated API.
+
 # Installation
     
 Using composer:
 
     "require": {
-        "calcinai/bolt": "^0.1"
+        "lowerpower/bolt": "^0.2
     }    
 
 
 # Usage
+      
+(This needs to be updated as it is no longer correct)
        
 Since this really lends itself to being an asynchronous app, it is built to use the React event loops and resolver since there's a good 
 chance they'll be in your project already and this lets you attach to the same loop.
