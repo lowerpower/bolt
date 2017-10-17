@@ -140,7 +140,7 @@ class Frame {
     public function appendBuffer(&$buffer){
 
         if(!$this->meta_decoded){
-echo "append to buffer ".$this->decode($buffer)."\n";        
+echo "call decode\n";        
             $this->decode($buffer);
         }
 
@@ -153,8 +153,12 @@ echo "append to buffer ".$this->decode($buffer)."\n";
         $outstanding = $this->frame_length - $payload_length;
         $available_length = $payload_length + strlen($buffer);
 
+echo "payload length $payload_length outstanding $outstanding \n";
+
         if($available_length < $outstanding){
             //Underrun
+echo "exception, underrun\n";
+            
             throw new IncompletePayloadException($this);
         }
 
@@ -177,10 +181,12 @@ echo "append to buffer ".$this->decode($buffer)."\n";
 
     public function decode(&$buffer){
 
-echo "decode\n";
+echo "decode buffer size is ".sizeof($buffer)."\n";
 
         //unpack n takes 2 bytes
         $control = current(unpack('C', $this->eatBytes($buffer, 1)));
+
+echo "control ".$control." size left ".sizeof($buffer)."\n";
 
         $this->frame_opcode = self::extractBits($control, self::FRAME_BITS_OPCODE);
         $this->frame_rsv3 = self::extractBits($control, self::FRAME_BITS_RSV3);
@@ -188,22 +194,26 @@ echo "decode\n";
         $this->frame_rsv1 = self::extractBits($control, self::FRAME_BITS_RSV1);
         $this->frame_fin = self::extractBits($control, self::FRAME_BITS_FIN);
 
-        if($this->isControlFrame()){
-echo "control frame\n";
 
+echo "opcode $this->frame_opcode, fin $this->frame_fin\n";
+
+        if($this->isControlFrame()){
             //We know this by now, no need to decode further
             return;
         }
 
-echo "unpack ".$buffer."\n";
+echo "get payload info ".$buffer[0]."\n";
         $payload_info = current(unpack('C', $this->eatBytes($buffer, 1)));
+
 echo "info ".$payload_info."\n";
 
         //Go through all the bits, shifting along the way.
         $this->frame_length = self::extractBits($payload_info, self::FRAME_BITS_LENGTH);
         $this->frame_masked = self::extractBits($payload_info, self::FRAME_BITS_MASKED);
+
 echo "frame length ".$this->frame_length."\n";
 
+        // check if extended payload
         if($this->frame_length === 126){
             $this->frame_length = current(unpack('n', $this->eatBytes($buffer, 2))); //First 2 Bytes
         } elseif($this->frame_length === 127){
@@ -212,20 +222,22 @@ echo "frame length ".$this->frame_length."\n";
         }
 
         if($this->isMasked()){
-echo "masked\n";
             $this->masking_key = $this->eatBytes($buffer, 4);
         }
 
         $this->meta_decoded = true;
-echo "done\n";
     }
 
 
     private function eatBytes(&$buffer, $num_bytes){
 
-        if(!isset($buffer[$num_bytes])){
+        // fix the off by one error, and make it clearer what we want
+        if( sizeof($buffer) < $num_bytes ){
             throw new IncompleteFrameException($this);
         }
+       // if(!isset($buffer[$num_bytes])){                      // off by one error
+        //    throw new IncompleteFrameException($this);
+       // }
 
         $consumed = substr($buffer, 0, $num_bytes);
         $buffer = substr($buffer, $num_bytes);

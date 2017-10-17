@@ -30,9 +30,6 @@ class RFC6455 extends AbstractProtocol {
     const WEBSOCKET_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
     public function upgrade() {
-
-echo "Upgrade\n";
-
         $this->sendUpgradeRequest();
     }
 
@@ -54,7 +51,9 @@ echo "Upgrade\n";
             //If we get to here, it had some body which will be the beginning of a (or complete) WS frame
             $buffer = $response->getBody();
         }
-
+//
+// Bug zero lenth frames
+//
 
         try {
             if(!isset($this->current_frame)){
@@ -64,9 +63,11 @@ echo "Upgrade\n";
         } catch (IncompletePayloadException $e){
             return true;
         } catch (IncompleteFrameException $e){
+            // Nuke Frame?
+            //unset($this->current_frame);
+            //return true;
             return false;
         }
-
 
         //At this point we have a complete frame
         $this->processFrame($this->current_frame);
@@ -74,7 +75,8 @@ echo "Upgrade\n";
         unset($this->current_frame);
 
         //Now that we're done, we can repeat/recurse for the overflow as fragment is PBR
-        if($overflow !== ''){
+        //if($overflow != ''){
+        if(sizeof($overflow)){    
             $this->onStreamData($overflow);
         }
         return true;
@@ -83,7 +85,6 @@ echo "Upgrade\n";
 
     private function processFrame(Frame $frame) {
 
-echo "process frame Opcode : ".$frame->getOpcode()."\n";
 
         switch($frame->getOpcode()){
             case Frame::OP_BINARY:
@@ -101,7 +102,7 @@ echo "process frame Opcode : ".$frame->getOpcode()."\n";
     }
 
     private function addFragmentToMessage(Frame $frame) {
-echo "add fragment\n";        
+
         if(!isset($this->current_message)){
             $this->current_message = new Message();
         }
@@ -110,7 +111,6 @@ echo "add fragment\n";
             ->setIsComplete($frame->isFinalFragment());
 
         if($this->current_message->isComplete()){
-echo "message complete emit message\n";
             $this->client->emit('message', [$this->current_message->getBody()]);
             unset($this->current_message);
         }
