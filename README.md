@@ -25,18 +25,18 @@ chance they'll be in your project already and this lets you attach to the same l
 ```php
 $loop = \React\EventLoop\Factory::create();
 
-// Options see "React\Socket\Connector" 
 $options=$options=array(
     'timeout'=>5.0                      /* 'timeout'=> false for disable */
 );
 
+// Now workes exaction like "React\Socket\Connector" 
 $client = new \Calcinai\Bolt\Client($loop, $options);
 
 //Most WS servers will complain/forbid if there is no origin header
 $client->setOrigin('127.0.0.1');
 
 // new, URL is here, ws:// and wss:// supported
-$client->connect(ws://127.0.0.1:1337/chat);
+$client->connect('ws://127.0.0.1:1337/chat');
 
 $client->on('stateChange', function($newState){
     echo "State changed to: $newState\n";
