@@ -19,7 +19,11 @@
         {
             "name": "Michael Calcinai",
             "email": "michael@calcin.ai"
-        }
+        },
+        {
+            "name": "Mike Johnson",
+            "homepage": "https://github.com/lowerpower",            
+        } 
     ],
     "autoload": {
         "psr-4": {
