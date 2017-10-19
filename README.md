@@ -11,7 +11,7 @@ This is not the original version, this has been updated to use latest reactphp a
 Using composer:
 
     "require": {
-        "lowerpower/bolt": "^0.2
+        "lowerpower/bolt": "^0.2"
     }    
 
 
