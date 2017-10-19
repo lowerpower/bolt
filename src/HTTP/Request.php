@@ -35,8 +35,6 @@ class Request {
         $this->method = $method;
         $this->path = $path;
         $this->headers = self::$default_headers;
-
-echo "construct http request\n";
     }
 
 

@@ -5,7 +5,8 @@
  * @author     Michael Calcinai <michael@calcin.ai>
 
     // updated for "react/socket": "^0.8"
-    // https://github.com/lowerpower
+    // Client uses standard reactphp connector interface now
+    // https://github.com/lowerpower/bolt
 
 */
 
@@ -16,11 +17,18 @@ use Calcinai\Bolt\Protocol\ProtocolInterface;
 use Calcinai\Bolt\Protocol\RFC6455;
 use React\Socket\ConnectionInterface;
 use Evenement\EventEmitter;
-use React\Dns\Resolver\Resolver;
+//use React\Dns\Resolver\Resolver;
 use React\EventLoop\LoopInterface;
-use React\Stream\DuplexStreamInterface;
+//use React\Stream\DuplexStreamInterface;
 
 
+/**
+ * The `Client` class is the main class in this package that implements the
+ * `ConnectorInterface` and allows you to create websocket client connections.
+ *
+ * You can use this Client nterface to create ws:// and wss:// websocket streams.
+ *
+ */
 class Client extends EventEmitter {
 
     /**
@@ -33,8 +41,7 @@ class Client extends EventEmitter {
      */
     private $resolver;
 
-    private $options=array();
-    private $context=array();
+    private $options;
 
     /**
      * The uri of the conenction
@@ -70,54 +77,33 @@ class Client extends EventEmitter {
     const STATE_CONNECTED   = 'connected';
     const STATE_CLOSING     = 'closing';
     const STATE_CLOSED      = 'closed';
+    const STATE_ERROR       = 'error';
 
-/*    
-	$options:
-
-	'tcp' => $tcp,
-    'tls' => $tls,
-    'unix' => $unix,
-
-    'dns' => false,
-    'timeout' => false,
-*/
-
-    public function __construct($uri, LoopInterface $loop, $options=array(), $context=array(), $protocol = null){
-
-        if(false === filter_var($uri, FILTER_VALIDATE_URL)){
-            throw new \InvalidArgumentException(sprintf('Invalid URI [%s]. Must be in format ws(s)://host:port/path', $uri));
-        }
-
-        if($protocol !== null) {
-            if(!in_array(ProtocolInterface::class, class_implements($protocol))){
-                throw new \InvalidArgumentException(sprintf('%s must implement %s', $protocol, ProtocolInterface::class));
-            }
-            $this->protocol = $protocol;
-        } else{
-
-            echo "RFC6455\n";
-            $this->protocol = RFC6455::class;
-        }
-
-        $this->uri = (object) parse_url($uri);
+    public function __construct(LoopInterface $loop, array $options = array() )
+    {
+        $this->protocol = RFC6455::class;
         $this->loop = $loop;
-        //$this->resolver = $resolver;
         $this->state = self::STATE_CLOSED;
         $this->heartbeat_interval = null;
         $this->options=$options;
-        $this->context=$context;
         $this->debug=1;
     }
 
-    public function connect() {
-
-        // how do we do this, we need the overloaded Connector
-        //$connector = new \React\SocketClient\Connector($this->loop, $this->options);
-        $options=array('tcp'=>$this->options,'tls'=>$this->context);
-
+    public function connect($uri) {
+        $this->emit('zoom',array('ccommenctrap'));
+        //
+        // Validate URL
+        //
+        if(false === filter_var($uri, FILTER_VALIDATE_URL)){
+            throw new \InvalidArgumentException(sprintf('Invalid URI [%s]. Must be in format ws(s)://host:port/path', $uri));
+        }
+        // parse it
+        $this->uri = (object) parse_url($uri);
+        //
         // we use socket connector here and specify the options, the options can be TCP and TLS options
         //
-        $connector = new \React\Socket\Connector($this->loop,$options);
+
+        $connector = new \React\Socket\Connector($this->loop,$this->options);
 
         switch($this->uri->scheme){
             case 'ws':
@@ -142,6 +128,11 @@ class Client extends EventEmitter {
             
             $that->transport = new $that->protocol($that, $conn);
             $that->transport->upgrade();
+        },
+        function ($error) {
+            // failed to connect due to $error
+            $this->setState(self::STATE_ERROR);
+            $this->emit('error',array($error->getMessage()) );
         });
 
         $this->setState(self::STATE_CONNECTING);
@@ -161,6 +152,9 @@ class Client extends EventEmitter {
                 $this->emit('closing');
                 break;
             case self::STATE_CLOSED:
+                $this->emit('close');
+                break;
+            case self::STATE_ERROR:
                 $this->emit('close');
                 break;
         }

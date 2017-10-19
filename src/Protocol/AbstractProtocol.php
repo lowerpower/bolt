@@ -30,9 +30,6 @@ abstract class AbstractProtocol implements ProtocolInterface {
 
     public function __construct(Client $client, DuplexStreamInterface $stream) {
 
-echo "Abstract\n";
-
-
         $this->client = $client;
         $this->stream = $stream;
 
@@ -54,7 +51,14 @@ echo "Abstract\n";
             'close', function () use ($client) {
             $client->setState(Client::STATE_CLOSED);
         });
-
+        $this->stream->on(
+            'end', function () use ($client) {
+            //echo "end stream\n";
+        });
+        $this->stream->on(
+            'error', function () use ($client) {
+        	//	echo "error in stream\n";
+		});
     }
 
     public function onHeartbeat(){

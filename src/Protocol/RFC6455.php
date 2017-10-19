@@ -51,9 +51,6 @@ class RFC6455 extends AbstractProtocol {
             //If we get to here, it had some body which will be the beginning of a (or complete) WS frame
             $buffer = $response->getBody();
         }
-//
-// Bug zero lenth frames
-//
 
         try {
             if(!isset($this->current_frame)){
@@ -165,8 +162,6 @@ class RFC6455 extends AbstractProtocol {
 
     public function send($string, $type = Frame::OP_TEXT) {
 
-echo "Send string\n";
-
         $frame = new Frame($string, $type);
         $this->stream->write($frame->encode());
     }
@@ -174,8 +169,6 @@ echo "Send string\n";
 
     public function sendHeartbeat(){
 
-echo "Send Ping\n";
-        
         $frame = new Frame('', Frame::OP_PING);
         $this->stream->write($frame->encode());
 

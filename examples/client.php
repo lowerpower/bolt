@@ -1,28 +1,45 @@
 <?php
+ini_set('display_errors', 'On');
+error_reporting(E_ALL | E_STRICT);
+
 
 require __DIR__.'/../vendor/autoload.php';
 
 $loop = \React\EventLoop\Factory::create();
-$dns_factory = new React\Dns\Resolver\Factory();
-$resolver = $dns_factory->createCached('8.8.8.8', $loop);
 
-$context=array(
+/*
+// Options for connection, these are the same as "React\Socket\Connector"
+    'tcp' => $tcp,
+    'tls' => $tls,
+    'unix' => $unix,
+    'dns' => false,
+    'timeout' => false
+    ...
+*/    
+
+// In this example we do not want to verify the peer or name for TLS, and we want to timeout the connection
+$options=array('tls'=>array(
     'verify_peer' => false,
     'verify_peer_name' => false
+    ),
+    'timeout'=>5.0                      /* 'timeout'=> false for disable */ 
 );
 
+
 //
-// New interface for Bolt Client matches connector but with URL prepended.
-// (URL,$loop,$options);
+// New interface for Bolt Client matches "React\Socket\Connector" connector, we now specify the URL in connect
 //
-//$client = new \Calcinai\Bolt\Client('wss://127.0.0.1:8443/test123sub?id=xyzzy', $loop, array() ,$context);
-//$client = new \Calcinai\Bolt\Client('wss://proxy20.remot3.it:8443/test123sub?id=xyzzy', $loop, array() ,$context);
-$client = new \Calcinai\Bolt\Client('ws://proxy20.remot3.it:8088/test123sub?id=xyzzy', $loop, array() ,$context);
-//$client = new \Calcinai\Bolt\Client('wss://x.p72.rt3.io:8443/test123sub?id=xyzzy', $loop, array(), $context );
-//$client = new \Calcinai\Bolt\Client('wss://proxy20.remot3.it:8443/test123sub?id=xyzzy', $loop, array(), array() );
+$client = new \Calcinai\Bolt\Client($loop, $options);
+
 $client->setOrigin('127.0.0.1');
 
+//
+// Set 'on' events, stateChange, message
+//
 $client->on('stateChange', function($newState){
+    //
+    // Stats are connecting, connected, closing, closed.
+    //
     echo "State changed to: $newState\n";
 });
 
@@ -30,25 +47,21 @@ $client->on('message', function($message) use ($client){
     echo "message: $message\n";
 });
 
+$client->on('error', function ($error) use ($client){
 
-$client->on('data', function($message) use ($client){
-        echo "message: $message\n";
-});
-
-$client->on('error', function (Exception $e) {
-    echo 'Error: ' . $e->getMessage() . PHP_EOL;
-    if ($e->getPrevious() !== null) {
-        $previousException = $e->getPrevious();
-        echo $previousException->getMessage() . PHP_EOL;
-    }
+   echo 'Error: ' . $error . PHP_EOL;
+    
 });
 
 //
-// connect like socket?
-$client->connect();
+// connect specifies the URL to match "React\Socket\Connector" 
+//
+// specify ws:// or wss://
+//
+//$client->connect('ws://proxy20.remot3.iit:8089/test123sub?id=xyzzy');
+$client->connect('wss://proxy20.remot3.it:8443/rest123sub?id=xyzzy');
 $loop->run();
 
 echo "bye\n";
 
-//print_r($client);
 

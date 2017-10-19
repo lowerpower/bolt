@@ -8,3 +8,5 @@ namespace Calcinai\Bolt\Exception;
 
 
 class ConnectionLostException extends \Exception {}
+
+

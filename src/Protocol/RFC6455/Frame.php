@@ -140,7 +140,6 @@ class Frame {
     public function appendBuffer(&$buffer){
 
         if(!$this->meta_decoded){
-echo "call decode\n";        
             $this->decode($buffer);
         }
 
@@ -153,12 +152,8 @@ echo "call decode\n";
         $outstanding = $this->frame_length - $payload_length;
         $available_length = $payload_length + strlen($buffer);
 
-echo "payload length $payload_length outstanding $outstanding \n";
-
         if($available_length < $outstanding){
             //Underrun
-echo "exception, underrun\n";
-            
             throw new IncompletePayloadException($this);
         }
 
@@ -181,12 +176,8 @@ echo "exception, underrun\n";
 
     public function decode(&$buffer){
 
-echo "decode buffer size is ".sizeof($buffer)."\n";
-
         //unpack n takes 2 bytes
         $control = current(unpack('C', $this->eatBytes($buffer, 1)));
-
-echo "control ".$control." size left ".sizeof($buffer)."\n";
 
         $this->frame_opcode = self::extractBits($control, self::FRAME_BITS_OPCODE);
         $this->frame_rsv3 = self::extractBits($control, self::FRAME_BITS_RSV3);
@@ -194,24 +185,16 @@ echo "control ".$control." size left ".sizeof($buffer)."\n";
         $this->frame_rsv1 = self::extractBits($control, self::FRAME_BITS_RSV1);
         $this->frame_fin = self::extractBits($control, self::FRAME_BITS_FIN);
 
-
-echo "opcode $this->frame_opcode, fin $this->frame_fin\n";
-
         if($this->isControlFrame()){
             //We know this by now, no need to decode further
             return;
         }
 
-echo "get payload info ".$buffer[0]."\n";
         $payload_info = current(unpack('C', $this->eatBytes($buffer, 1)));
-
-echo "info ".$payload_info."\n";
 
         //Go through all the bits, shifting along the way.
         $this->frame_length = self::extractBits($payload_info, self::FRAME_BITS_LENGTH);
         $this->frame_masked = self::extractBits($payload_info, self::FRAME_BITS_MASKED);
-
-echo "frame length ".$this->frame_length."\n";
 
         // check if extended payload
         if($this->frame_length === 126){
@@ -235,8 +218,9 @@ echo "frame length ".$this->frame_length."\n";
         if( sizeof($buffer) < $num_bytes ){
             throw new IncompleteFrameException($this);
         }
+
        // if(!isset($buffer[$num_bytes])){                      // off by one error
-        //    throw new IncompleteFrameException($this);
+       //    throw new IncompleteFrameException($this);
        // }
 
         $consumed = substr($buffer, 0, $num_bytes);
