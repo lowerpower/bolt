@@ -23,6 +23,7 @@ Since this really lends itself to being an asynchronous app, it is built to use 
 ```php
 $loop = \React\EventLoop\Factory::create();
 
+// other options like tls, socket, etc are possible see "React\Socket\Connector"
 $options=$options=array(
     'timeout'=>5.0                      /* 'timeout'=> false for disable */
 );
@@ -51,7 +52,7 @@ $loop->run();
 ```
    
    
-Other available events are ```connecting```, ```connect```, ```disconnecting```, ```disconnect```
+Other available events are ```connecting```, ```connect```, ```closing```, ```close```
 
 
 HTTP basic auth is also supported via the URI inf the form ```user:pass@host```
