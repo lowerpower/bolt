@@ -1,5 +1,5 @@
 {
-    "name": "calcinai/bolt",
+    "name": "lowerpower/bolt",
     "description": "Asynchronous WebSocket client",
     "type": "Library",
     "require": {
