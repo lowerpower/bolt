@@ -1,6 +1,6 @@
 {
     "name": "lowerpower/bolt",
-    "description": "Asynchronous WebSocket client",
+    "description": "Asynchronous WebSocket client built on ReactPHP",
     "type": "Library",
     "require": {
         "react/event-loop": "^0.4",
